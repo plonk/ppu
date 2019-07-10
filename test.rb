@@ -157,6 +157,8 @@ COMMANDS = {
   "furo"        => [[:aa2ch, :furo]],
   "unk"        => [[:aa2ch, :unk]],
   "unko"        => [[:aa2ch, :unk]],
+
+  "anka" => [[:anka]],
 }
 
 AA = {
@@ -417,14 +419,14 @@ def process_commands(cmds)
       name, arg = exp
       case name
       when :press
-        system("xdotool keydown --clearmodifiers #{arg} --window #{id()}")
+        system("xdotool keydown --clearmodifiers --window #{id()} #{arg}")
         sleep DELAY1
-        system("xdotool keyup --clearmodifiers #{arg} --window #{id()}")
+        system("xdotool keyup --clearmodifiers --window #{id()} #{arg}")
         sleep DELAY2
       when :down
-        system("xdotool keydown --clearmodifiers #{arg} --window #{id()}")
+        system("xdotool keydown --clearmodifiers --window #{id()} #{arg}")
       when :up
-        system("xdotool keyup --clearmodifiers #{arg} --window #{id()}")
+        system("xdotool keyup --clearmodifiers --window #{id()} #{arg}")
       when :delay
         sleep arg
       when :aa2ch
@@ -474,6 +476,8 @@ def process_commands(cmds)
         check3(arg)
       when :check8
         check8
+      when :anka
+        anka(param)
       end
     end
   end
@@ -483,35 +487,90 @@ def id
   if $id
     $id
   else
-    $id = `xdotool search "アスカ" 2>/dev/null`
-    if $id.empty?
-      puts "アスカのウィンドウがみつかりません。"
+    if anka_mode?
+      STDERR.puts "できねーよm9(^Д^)"
       exit 1
+    else
+      $id = `xdotool search "アスカ" 2>/dev/null`
+      if $id.empty?
+        puts "アスカのウィンドウがみつかりません。"
+        exit 1
+      end
+      $id = $id.to_i
+      system("xdotool windowactivate --sync #{id()}")
     end
-    $id = $id.to_i
-    system("xdotool windowactivate --sync #{id()}")
   end
 end
 
-def main
-  # サマリにはスレッド名が入っている。
-  summary, body = ARGV
+ANKA_PATH = File.join(File.dirname(__FILE__), "anka.txt")
 
-  body1 = body.gsub(/<a.*?(\d+)<\/a>/, ">>\\1")
-  # open("|t2i", "w") do |f|
-  #   f.write(body1)
-  # end
-  print body1
+def anka(param)
+  if param =~ /\d+/
+    n = $&.to_i
+  else
+    STDERR.puts "ankaへの引数に数字がないよ。"
+    return
+  end
 
-  $res = body.each_line.first.split(/:/,2)[0].to_i
-  # レス番、投稿時刻などが含まれる最初の行を削除。
-  body = body.each_line.drop(1).join
-  # アンカのリンクを削除。
-  body = body.gsub(/<a.*?(\d+)<\/a>/, "\\1番")
-  body = body.gsub(/https?:\/\/[a-zA-Z0-9\/?=\-.]+/,"リンク")
+  if anka_mode?
+    STDERR.puts "おかしいな。もうアンカモードだよ？"
+    return
+  end
+
+  unless n > $res
+    STDERR.puts "過去のレス番(#{n})が指定されているよ。"
+    return
+  end
+
+  if n > 1000
+    STDERR.puts "レス番でかすぎぃ！"
+    return
+  end
+
+  if n > $res + 20
+    STDERR.puts "レス番遠すぎ。"
+    return
+  end
+
+  File.open(ANKA_PATH, "w") do |f|
+    f.puts n
+  end
+  system_message("アンカモードに移行します。\n>>#{n}番までのゲーム操作コマンドは実行されません。")
+end
+
+def system_message(msg)
+  STDERR.puts "\e[33;49m#{msg}\e[0m"
+  system("vtsay", msg)
+end
+
+def anka_mode?
+  File.exist?(ANKA_PATH)
+end
+
+def process(summary, body)
+  if anka_mode?
+    fail 'logic error' unless anka_mode?
+
+    if $res >= File.read(ANKA_PATH).to_i
+      File.unlink(ANKA_PATH)
+      if parse_word(body).any?
+        process(summary, body)
+      else
+        system("vtsay", body)
+        system_message("コマンドレスではなかったので再アンカ(>>#{$res+1})。")
+        File.open(ANKA_PATH, "w") do |f|
+          f.puts($res + 1)
+        end
+      end
+
+      unless anka_mode?
+        system_message("オアシスモードに戻ります。")
+      end
+      return
+    end
+  end
 
   cmds = parse_word(body)
-
   if cmds.any?
     process_commands(cmds.take(MAX_COMMANDS))
 
@@ -523,9 +582,32 @@ def main
     end
   else
     system("vtsay", body)
-    #system("say", body)
+  end
+end
+
+def main
+  # サマリにはスレッド名が入っている。
+  summary, body = ARGV
+
+  body1 = body.gsub(/<a.*?>(.*?)<\/a>/, "\\1")
+
+  $res = body.each_line.first.split(/:/,2)[0].to_i
+  # レス番、投稿時刻などが含まれる最初の行を削除。
+  body = body.each_line.drop(1).join
+  # アンカのリンクを削除。
+  body = body.gsub(/<a.*?>>>(.*?)<\/a>/, "\\1番")
+  body = body.gsub(/https?:\/\/[a-zA-Z0-9\/?=\-.]+/,"リンク")
+
+  if anka_mode?
+    puts "\e[33;49m[安価 >>#{File.read(ANKA_PATH).chomp}]\e[0m"
   end
 
+  # open("|t2i", "w") do |f|
+  #   f.write(body1)
+  # end
+  print body1
+
+  process(summary, body)
   puts
 end
 
