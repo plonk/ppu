@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'rack'
+
+def esc(str)
+  Rack::Utils.escape(str)
+end
+
+def main
+  opts = {}
+  ARGV.delete_if do |s|
+    case s
+    when "--"
+      break
+    when /\A--(\w+)=(.*)\z/
+      opts[$1] = $2
+    else
+      break
+    end
+  end
+
+  if ARGV.size != 1
+    STDERR.puts("vtsay [OPTIONS] STUFF")
+    exit 1
+  end
+  opts["text"] ||= ARGV[0]
+  opts["speaker"] ||= "hikari"
+  opts["format"] ||= "ogg"
+
+  filename = "/tmp/vtsay.#{Process.pid}.ogg"
+  system("curl",
+         "https://api.voicetext.jp/v1/tts",
+         "-s",
+         "-u", File.read("/home/plonk/.voiceapi").chomp + ":",
+         *opts.flat_map { |k,v| ["-d", "#{k}=#{esc(v)}"] },
+         "-o", filename)
+  system("play", "-q", filename, :err => "/dev/null")
+  system("rm", "-f", filename)
+end
+
+main

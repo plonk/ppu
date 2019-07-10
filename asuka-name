@@ -1,0 +1,883 @@
+#!/usr/bin/env ruby
+
+class Node
+  attr_reader :label, :edges
+  def initialize(label)
+    @label = label
+    @edges = {}
+  end
+
+  def inspect
+    "N(#{@label},#{edges.size})"
+  end
+end
+
+class AsukaName
+  LAYERS = [
+    [
+      "あいうえおはひふへほ".each_char.map { |c| Node.new(c) },
+      "かきくけこまみむめも".each_char.map { |c| Node.new(c) },
+      "さしすせそやゆよっー".each_char.map { |c| Node.new(c) },
+      "たちつてとらりるれろ".each_char.map { |c| Node.new(c) },
+      "なにぬねのわをん゛゜".each_char.map { |c| Node.new(c) },
+      "ぁぃぅぇぉゃゅょ？　".each_char.map { |c| Node.new(c) }
+    ],
+
+    [
+      "アイウエオハヒフヘホ".each_char.map { |c| Node.new(c) },
+      "カキクケコマミムメモ".each_char.map { |c| Node.new(c) },
+      "サシスセソヤユヨッー".each_char.map { |c| Node.new(c) },
+      "タチツテトラリルレロ".each_char.map { |c| Node.new(c) },
+      "ナニヌネノワヲン゛゜".each_char.map { |c| Node.new(c) },
+      "ァィゥェォャュョ　　".each_char.map { |c| Node.new(c) }
+    ],
+
+    [
+      "０１２３４５６７８９".each_char.map { |c| Node.new(c) },
+      "ＡＢＣＤＥＦＧＨＩＪ".each_char.map { |c| Node.new(c) },
+      "ＫＬＭＮＯＰＱＲＳＴ".each_char.map { |c| Node.new(c) },
+      "ＵＶＷＸＹＺ＋－！？".each_char.map { |c| Node.new(c) },
+      "ａｂｃｄｅｆｇｈｉｊ".each_char.map { |c| Node.new(c) },
+      "ｋｌｍｎｏｐｑｒｓｔ".each_char.map { |c| Node.new(c) },
+      "ｕｖｗｘｙｚ　　　　".each_char.map { |c| Node.new(c) },
+    ],
+  ]
+
+  KANJI_LAYERS = {
+    "あ"=>
+    [
+      [
+        "阿哀愛逢葵悪握旭芦圧",
+        "扱宛綾粟安庵暗案闇杏",
+      ],
+    ],
+    "い"=>
+    [
+      [
+        "以伊位依偉囲委威意易",
+        "為異移緯胃衣違遺医井",
+        "域育磯一壱逸稲印員因",
+        "引飲院陰隠",
+      ],
+    ],
+    "う"=>
+    [
+      [
+        "右宇羽雨渦浦云運雲",
+      ],
+    ],
+    "え"=>
+    [
+      [
+        "営影映栄永泳英衛詠鋭",
+        "液益駅悦越榎円園宴延",
+        "怨援沿演炎煙猿縁薗遠",
+        "鉛塩",
+      ],
+    ],
+    "お"=>
+    [
+      [
+        "汚甥凹央奥往応押横欧",
+        "殴王翁黄岡沖荻掟億屋",
+        "憶臆牡乙俺卸恩温穏音",
+      ],
+    ],
+    "か"=>
+    [
+      [
+        "下化仮何価加可嘉夏嫁",
+        "家科暇果架歌河火稼花",
+        "荷華菓課貨過蚊我牙面",
+        "芽賀雅餓介会解回塊壞",
+        "廻快怪悔懐戒拐改械海",
+        "灰界皆絵芥開階貝外害",
+        "崖慨概街該鎧垣柿各拡",
+      ],
+      [
+        "格核殼獲確穫覚角較郭",
+        "閣隔革学岳楽額掛笠梶",
+        "潟割喝括活渇滑褐叶株",
+        "蒲釜刈瓦乾冠寒刊勘勧",
+        "巻喚堪完官寬于幹患感",
+        "慣換敢棺歓汗漢環甘監",
+        "看管簡緩缶肝艦観貫還",
+      ],
+      [
+        "鑑間関陥館丸含岸癌眼",
+        "岩頑顔願",
+      ],
+    ],
+    "き"=>
+    [
+      [
+        "企危喜器基奇嬉寄岐希",
+        "幾忌揮机旗既期棋棄機",
+        "帰毅気汽祈季紀規記貴",
+        "起軌輝飢騎鬼亀偽儀技",
+        "擬欺犠疑義議吉喫橘詰",
+        "却客脚虐逆丘久仇休及",
+        "吸宮弓急救朽求汲泣灸",
+      ],
+      [
+        "球究窮級糾給旧牛去居",
+        "巨拠挙虚許漁魚亨享京",
+        "供競共凶協匡卿叫境峽",
+        "強怯恐恭教橋況狂狭胸",
+        "脅興郷鏡響驚仰凝業局",
+        "曲極玉桐勤均巾錦琴禁",
+        "筋緊菌近金吟銀",
+      ],
+    ],
+    "く"=>
+    [
+      [
+        "九句区狗苦駆駒具愚空",
+        "偶遇隅串屈掘窟靴窪熊",
+        "栗繰桑勲君薫訓群軍郡",
+      ],
+    ],
+    "け"=>
+    [
+      [
+        "係傾刑兄啓圭型契形径",
+        "恵掲携敬景桂渓系経継",
+        "繋茎蛍計詣警軽鶏芸迎",
+        "劇撃激隙欠決潔穴結血",
+        "訣月件倹健兼券剣堅嫌",
+        "建検権犬献研絹県肩見",
+        "謙賢軒遣鍵険顕験元原",
+      ],
+      [
+        "厳幻弦減源玄現言限",
+      ],
+    ],
+    "こ"=>
+    [
+      [
+        "個古呼固姑孤己庫弧戸",
+        "故枯湖孤虎誇屋顧鼓五",
+        "互午娯後御悟碁語誤護",
+        "乞交候光公功効厚口向",
+        "坑好孝宏工巧巷幸広康",
+        "弘恒慌抗攻晃更杭校構",
+        "江洪浩港溝甲皇硬紅鋼",
+      ],
+      [
+        "耕考肯航荒行講貢購郊",
+        "酵缸鋼降項香高鴻剛劫",
+        "号合豪克刻告国毅酷黒",
+        "獄腰惚骨拍込此頃今困",
+        "婚恨根混紺魂",
+      ],
+    ],
+    "さ"=>
+    [
+      [
+        "佐左差査砂鎖座債催再",
+        "最哉塞妻彩才採栽歳済",
+        "災碎岩祭細菜裁載際剤",
+        "在材罪財冴坂阪堺咲崎",
+        "埼作削昨柵策索錯桜笹",
+        "冊刷察拶撮札殺雑錆皿",
+        "三参山惨撤散浩産算賛",
+      ],
+      [
+        "酸斬暫残",
+      ],
+    ],
+    "し"=>
+    [
+      [
+        "仕仔使刺司史四士始姉",
+        "姿子屍市師志思指支斯",
+        "施旨枝止死氏私糸紙紫",
+        "肢脂至視詞詩試誌資雌",
+        "飼歯事似侍児字寺慈持",
+        "時次滋治磁示耳自辞汐",
+        "鹿式識軸七叱執失室湿",
+      ],
+      [
+        "疾質実篠柴芝縞舎写射",
+        "捨煮社者謝車遮蛇邪借",
+        "勺尺爵釈若寂弱惹主取",
+        "守手朱殊狩珠種腫趣酒",
+        "首儒受呪寿授樹需囚収",
+        "周宗就州修拾洲秀秋終",
+        "習臭舟衆襲警蹴週集醜",
+      ],
+      [
+        "住充十従戎柔汁渋獣縦",
+        "重銃宿淑祝縮塾熟出術",
+        "述俊春瞬駿循旬楯殉淳",
+        "準潤盾純巡順処初所暑",
+        "曙渚庶緒署書諸助女序",
+        "徐除傷償勝匠召商唱奨",
+        "娼将小少庄床彰承招掌",
+      ],
+      [
+        "捷昇昌昭晶松沼消渉焼",
+        "焦照症省磯称章笑紹衝",
+        "裳訟証詳象賞鐘障上丈",
+        "丞乗冗剰城場壌嬢常情",
+        "条杖浄状畳蒸譲飾植織",
+        "職色触食蝕辱尻伸信侵",
+        "唇寝審心慎振新晋森浸",
+      ],
+      [
+        "深申真神紳臣芯薪親診",
+        "身辛進針震人仁刃塵尋",
+        "甚尽腎迅陣",
+      ],
+    ],
+    "す"=>
+    [
+      [
+        "須酢図厨吹垂帥推水炊",
+        "睡粋衰遂酔随髄数杉菅",
+        "雀澄",
+      ],
+    ],
+    "せ"=>
+    [
+      [
+        "世瀬是凄制勢姓征性成",
+        "政整星晴棲正清牲生盛",
+        "精聖声製西誠誓請逝青",
+        "静斉税隻席惜戚斥昔析",
+        "石積籍績責赤跡切拙接",
+        "摂折設窃節説雪絶舌仙",
+        "先千占宣専川戦扇栓泉",
+      ],
+      [
+        "浅洗染潜煎旋線繊羨船",
+        "薦践選遷銭閃鮮前善然",
+        "全禅繕膳",
+      ],
+    ],
+    "そ"=>
+    [
+      [
+        "噌措曽楚狙疎礎祖粗素",
+        "組蘇訴阻僧創双倉喪壮",
+        "奏爽宋層惣想捜掃挿操",
+        "早曹巣漕燥争痩相窓総",
+        "聡草荘葬蒼藻装走送遭",
+        "霜騒像増憎臓蔵贈造促",
+        "側則即息捉束測足速俗",
+      ],
+      [
+        "属賊族続卒袖其揃存孫",
+        "尊損村遜",
+      ],
+    ],
+    "た"=>
+    [
+      [
+        "他多太詑唾堕妥惰打舵",
+        "駄体対耐帯待怠態替滞",
+        "胎苔袋貸退逮隊鯛代台",
+        "大第題滝卓啄宅択拓沢",
+        "濯琢託濁諾茸凧蛸只叩",
+        "但達辰奪脱巽竪辿棚谷",
+        "狸誰丹単嘆担深旦淡炭",
+      ],
+      [
+        "短端綻胆誕鍛団壇弾断",
+        "暖檀段男談",
+      ],
+    ],
+    "ち"=>
+    [
+      [
+        "値知地弛恥智池痴稚置",
+        "致遅馳築畜竹蓄逐秩窒",
+        "茶着中仲宙忠抽昼柱注",
+        "虫註酎駐猪著貯丁兆喋",
+        "帳庁弔張彫徴懲挑暢朝",
+        "潮町眺聴腸蝶調諜超跳",
+        "銚長頂鳥勅直朕沈珍賃",
+      ],
+      [
+        "鎮陳",
+      ],
+    ],
+    "つ"=>
+    [
+      [
+        "津墜追鎚痛通塚槻佃漬",
+        "辻椿潰坪壺爪吊釣鶴",
+      ],
+    ],
+    "て"=>
+    [
+      [
+        "亭低停偵剃貞呈堤定帝",
+        "底庭廷弟抵提程締艇諦",
+        "邸釘泥摘擢敵滴的笛適",
+        "溺哲徹撒迭鉄典填天展",
+        "店添貼転点伝殿澱田電",
+      ],
+    ],
+    "と"=>
+    [
+      [
+        "兎吐塗妬徒斗渡登賭途",
+        "都努度土奴怒倒党冬凍",
+        "刀唐塔宕島嶋悼投搭東",
+        "桃棟盗湯灯燈当等答筒",
+        "糖統到藤討豆踏逃透陶",
+        "瞳童胴道銅峠匿得徳特",
+      ],
+      [
+        "督禿毒独読栃凸突届寅",
+        "沌豚頓呑曇鈍丼",
+      ],
+    ],
+    "な"=>
+    [
+      [
+        "奈那内凪謎灘馴縄南楠",
+        "軟難汝",
+      ],
+    ],
+    "に"=>
+    [
+      [
+        "二尼弐匂肉虹日乳入如",
+        "尿韮任忍認",
+      ],
+    ],
+    "ぬ"=>
+    [
+      [
+        "濡",
+      ],
+    ],
+    "ね"=>
+    [
+      [
+        "寧猫熱年念燃粘",
+      ],
+    ],
+    "の"=>
+    [
+      [
+        "乃之悩濃納能脳膿農",
+      ],
+    ],
+    "は"=>
+    [
+      [
+        "把覇波派琶破婆罵馬廃",
+        "拝排敗杯盃牌背肺輩配",
+        "倍培媒梅煤狽買売賠這",
+        "蝿萩伯博拍柏泊白箔薄",
+        "迫漠爆縛莫麦函箱箸肇",
+        "肌畑畠八鉢発髪伐罰抜",
+        "閥鳩噺隼伴判半反帆搬",
+      ],
+      [
+        "斑板汎版犯班畔繁般藩",
+        "販範采煩飯挽晩番盤磐",
+        "蛮",
+      ],
+    ],
+    "ひ"=>
+    [
+      [
+        "卑否妃彼悲扉批披斐比",
+        "疲皮碑秘緋肥被誹費避",
+        "非飛樋備尾微毘琵眉美",
+        "鼻柊匹髭彦菱肘必筆桧",
+        "姫媛百俵標氷漂票表評",
+        "豹描病秒苗蛭品浜貧賓",
+        "敏瓶",
+      ],
+    ],
+    "ふ"=>
+    [
+      [
+        "不付夫婦富冨布府怖扶",
+        "敷斧普浮父符腐膚譜負",
+        "賦赴阜附巫侮武舞部封",
+        "楓風伏副復幅服福腹複",
+        "覆淵払沸仏物分吻噴墳",
+        "憤扮奮粉糞紛文聞",
+      ],
+    ],
+    "へ"=>
+    [
+      [
+        "併兵塀幣平柄並閉陛屏",
+        "米頁壁癖別蔑偏変片編",
+        "辺返遍便勉弁鞭",
+      ],
+    ],
+    "ほ"=>
+    [
+      [
+        "保捕歩補輔穂募墓慕暮",
+        "母倣包呆報奉宝峰峯崩",
+        "抱捧放方朋法泡砲縫胞",
+        "芳萌蜂訪豊邦飽鳳乏亡",
+        "傍坊妨帽忘忙房暴望某",
+        "棒冒肪謀貿防吠頬北僕",
+        "墨撲朴牧睦祠勃没堀奔",
+      ],
+      [
+        "本凡盆",
+      ],
+    ],
+    "ま"=>
+    [
+      [
+        "摩磨魔麻埋妹枚毎槙幕",
+        "膜枕桝又抹末迄麿万慢",
+        "満漫",
+      ],
+    ],
+    "み"=>
+    [
+      [
+        "味未魅巳岬密蜜蓑稔脈",
+        "妙粍民眠",
+      ],
+    ],
+    "む"=>
+    [
+      [
+        "務夢無矛霧婿娘",
+      ],
+    ],
+    "め"=>
+    [
+      [
+        "冥名命明盟迷銘鳴姪牝",
+        "滅免綿面麺",
+      ],
+    ],
+    "も"=>
+    [
+      [
+        "摸模茂毛猛盲網耗儲木",
+        "黙目勿餅戻貰問紋門",
+      ],
+    ],
+    "や"=>
+    [
+      [
+        "也冶夜爺野弥矢厄役約",
+        "薬訳躍靖柳藪",
+      ],
+    ],
+    "ゆ"=>
+    [
+      [
+        "愉油癒諭輸唯佑優勇友",
+        "幽憂有袖湧猶由祐裕誘",
+        "遊郵雄融夕",
+      ],
+    ],
+    "よ"=>
+    [
+      [
+        "予余与輿預傭幼妖容揺",
+        "曜様洋溶用羊耀葉要謡",
+        "踊遥陽養抑欲沃浴翌翼",
+        "淀",
+      ],
+    ],
+    "ら"=>
+    [
+      [
+        "羅裸来頼雷絡落酪乱卵",
+        "嵐欄濫藍蘭覧",
+      ],
+    ],
+    "り"=>
+    [
+      [
+        "利吏履李梨理裏裡里離",
+        "陸律率立略劉流溜琉留",
+        "粒隆竜龍侶慮旅虜了亮",
+        "僚両寮料涼猟療糧良遼",
+        "量陵領力緑倫林淋臨輪",
+        "隣",
+      ],
+    ],
+    "る"=>
+    [
+      [
+        "涙類",
+      ]
+    ],
+    "れ"=>
+    [
+      [
+        "令例冷励嶺怜礼鈴隷零",
+        "霊麗齢暦歴列劣烈裂恋",
+        "憐練蓮連錬",
+      ],
+    ],
+    "ろ"=>
+    [
+      [
+        "炉賂路露労廊弄朗桜浪",
+        "牢狼老郎六麓肋録論",
+      ],
+    ],
+    "わ"=>
+    [
+      [
+        "和話歪脇惑枠罠詫椀湾",
+        "碗腕",
+      ],
+    ],
+  }
+
+
+  DAKUON_TO_SEION = {
+    "ば" => "は",
+    "び" => "ひ",
+    "ぶ" => "ふ",
+    "べ" => "へ",
+    "ぼ" => "ほ",
+    "が" => "か",
+    "ぎ" => "き",
+    "ぐ" => "く",
+    "げ" => "け",
+    "ご" => "こ",
+    "ざ" => "さ",
+    "じ" => "し",
+    "ず" => "す",
+    "ぜ" => "せ",
+    "ぞ" => "そ",
+    "だ" => "た",
+    "ぢ" => "ち",
+    "づ" => "つ",
+    "で" => "て",
+    "ど" => "と",
+    "ヴ" => "ウ",
+    "バ" => "ハ",
+    "ビ" => "ヒ",
+    "ブ" => "フ",
+    "ベ" => "ヘ",
+    "ボ" => "ホ",
+    "ガ" => "カ",
+    "ギ" => "キ",
+    "グ" => "ク",
+    "ゲ" => "ケ",
+    "ゴ" => "コ",
+    "ザ" => "サ",
+    "ジ" => "シ",
+    "ズ" => "ス",
+    "ゼ" => "セ",
+    "ゾ" => "ソ",
+    "ダ" => "タ",
+    "ヂ" => "チ",
+    "ヅ" => "ツ",
+    "デ" => "テ",
+    "ド" => "ト",
+  }
+
+  HANDAKUON_TO_SEION = {
+    "ぱ" => "は",
+    "ぴ" => "ひ",
+    "ぷ" => "ふ",
+    "ぺ" => "へ",
+    "ぽ" => "ほ",
+    "パ" => "ハ",
+    "ピ" => "ヒ",
+    "プ" => "フ",
+    "ペ" => "ヘ",
+    "ポ" => "ホ",
+  }
+
+  MODES = [:memo, :name, :compatible]
+
+  def initialize(mode)
+    fail MODES.join(' ') unless MODES.include?(mode)
+
+    do_kana_alphanum(mode)
+    do_kanji(mode)
+
+    # かな・カナレイヤーから漢字レイヤーに飛べるようにする。
+    LAYERS[0..1].each do |layer|
+      layer.each_with_index do |row, i|
+        next if i == 0 # コマンドバー
+        row.each do |node|
+          kana = node.label.tr('ァ-ン', 'ぁ-ん')
+          if KANJI_LAYERS.has_key?(kana)
+            page = KANJI_LAYERS[kana][0] # １枚目のページ。
+            node.edges["s"] = page[1][0]
+          end
+        end
+      end
+    end
+
+    # 漢字レイヤーの「かな・カナ・英数」からひらがなレイヤーの「かな・
+    # カナ・英数」に飛べるようにする。
+    KANJI_LAYERS.values.flatten(1).each do |page|
+      page[0][0].edges["e"] = LAYERS[0][0][0]
+    end
+  end
+
+  def do_kana_alphanum(mode)
+    LAYERS.each_with_index do |layer,n|
+      cmdbar, cmdpos = create_cmdbar_cmdpos(mode, layer)
+      do_layer(layer, cmdbar, cmdpos)
+    end
+
+    # 各レイヤーの「かな・カナ・英数」を接続する。
+    LAYERS.size.times do |i|
+      kana1 = LAYERS[i][0][0]
+      kana2 = LAYERS[(i+1)%LAYERS.size][0][0]
+      fail unless kana1.label == "かな・カナ・英数" &&
+                  kana2.label == "かな・カナ・英数"
+      kana1.edges["e"] = kana2
+    end
+  end
+
+  def create_cmdbar_cmdpos(mode, layer)
+    kana   = Node.new("かな・カナ・英数")
+    kanji  = Node.new("漢字")
+    oginau = Node.new("おぎなう")
+    kesu   = Node.new("けす")
+    owaru  = Node.new("おわる")
+
+    case mode
+    when :memo
+      cmdbar = [kana, kanji, kesu, owaru]
+      cmdpos = [0..3, 4..4, 5..7, 8..9]
+    when :name
+      cmdbar = [kana, kanji, oginau, kesu, owaru]
+      cmdpos = [0..2, 3..4, 5..6, 7..7, 8..9]
+    when :compatible
+      cmdbar = [kana, owaru]
+      cmdpos = [0..2, 8..9]
+    end
+
+    if mode == :compatible
+      kana.edges["k"] = layer[layer.size-1][cmdpos[0].first]
+      kana.edges["j"] = layer[0][cmdpos[0].first]
+      kana.edges["h"] = owaru
+      kana.edges["space"] = owaru
+
+      owaru.edges["k"] = layer[layer.size-1][cmdpos[-1].first]
+      owaru.edges["j"] = layer[0][cmdpos[-1].first]
+      owaru.edges["l"] = kana
+      owaru.edges["space"] = owaru
+    else
+      cmdbar.zip(cmdpos).each.with_index do |(cmd, pos), i|
+        cmd.edges["k"] = layer[layer.size-1][pos.first]
+        cmd.edges["j"] = layer[0][pos.first]
+        cmd.edges["h"] = cmdbar[(i-1)%cmdbar.size]
+        cmd.edges["l"] = cmdbar[(i+1)%cmdbar.size]
+        cmd.edges["space"] = owaru
+      end
+    end
+
+    return cmdbar, cmdpos
+  end
+
+  # 各ラベルを上下左右、ナナメに接続して、コマンドバーをインストールする。
+  def do_layer(layer, cmdbar, cmdpos)
+    layer.each_with_index do |row,y|
+      row.each.with_index do |node,x|
+        if y == 0
+          cmdbar.zip(cmdpos).each do |cmd, pos|
+            if pos.include?(x)
+              node.edges["k"] = cmd
+            end
+          end
+        else
+          node.edges["k"] = layer[y - 1][x]
+        end
+        node.edges["h"] = row[(x - 1)%10]
+        node.edges["l"] = row[(x + 1)%10]
+        if y == layer.size - 1
+          cmdbar.zip(cmdpos).each do |cmd, pos|
+            if pos.include?(x)
+              node.edges["j"] = cmd
+            end
+          end
+        else
+          node.edges["j"] = layer[y + 1][x]
+        end
+
+        node.edges["space"] = cmdbar[-1] # 終わる
+      end
+
+    end
+
+    # コマンドバーをレイヤーに追加。
+    layer.unshift(cmdbar)
+
+    # ナナメの辺を追加する。
+    layer.each_with_index do |row,y|
+      row.each_with_index do |node,x|
+        if node.edges["h"]
+          if node.edges["h"].edges["k"]
+            node.edges["y"] = node.edges["h"].edges["k"]
+          end
+          if node.edges["h"].edges["j"]
+            node.edges["b"] = node.edges["h"].edges["j"]
+          end
+        end
+        if node.edges["l"]
+          if node.edges["l"].edges["k"]
+            node.edges["u"] = node.edges["l"].edges["k"]
+          end
+          if node.edges["l"].edges["j"]
+            node.edges["n"] = node.edges["l"].edges["j"]
+          end
+        end
+      end
+    end
+  end
+
+  def do_kanji(mode)
+    # ----------------------------------------------------------------
+    hiragana = "あいうえおかきくけこさしすせそ" +
+               "たちつてとはなにぬねのひふへほ" +
+               "まみむめもやゆよらりるれろわ"
+
+    KANJI_LAYERS.each_pair do |key, pages|
+      pages.map! do |page|
+        7.times.map do |i|
+          if page[i]
+            line = page[i] + "　"*(10 - page[i].size)
+          else
+            line = " "*10
+          end
+          line.each_char.map { |c| Node.new(c) }
+        end
+      end
+    end
+
+    # require 'pp'
+    #pp KANJI_LAYERS
+    # pp hiragana.each_char.map { |c| [c, KANJI_LAYERS.has_key?(c), KANJI_LAYERS[c]&.size] }
+
+    KANJI_LAYERS.each_pair do |key, pages|
+      pages.each do |page|
+        cmdbar, cmdpos = create_cmdbar_cmdpos(mode, page)
+        do_layer(page, cmdbar, cmdpos)
+
+        # すべてのラベルでメニューボタンを押すとひらがな、あるいはカタ
+        # カナのページの「あ（ア）」に戻るべきだが省略。
+      end
+    end
+
+    # すべてのページのすべてのラベルで Lトリガー(q) R トリガー(w)はペー
+    # ジの切り替えを引き起こし、対応する座標のラベルに移動する。
+    pages = KANJI_LAYERS.values.flatten(1)
+    n = pages.size
+    pages.each_with_index do |page, i|
+      page.each_with_index do |line, y|
+        line.each_with_index do |node, x|
+          fail unless pages[(i-1) % n][y][x].is_a?(Node)
+          fail unless pages[(i+1) % n][y][x].is_a?(Node)
+          node.edges["q"] = pages[(i-1) % n][y][x]
+          node.edges["w"] = pages[(i+1) % n][y][x]
+        end
+      end
+    end
+  end
+
+  def to_path(prev, node)
+    path = []
+    while true
+      case prev[node]
+      when :bottom
+        break
+      else
+        node, key = prev[node]
+        path << key
+      end
+    end
+    return path.reverse
+  end
+
+  def find_node_path(init, label)
+    prev = { init => :bottom }
+    queue = [init]
+
+    until queue.empty?
+      node = queue.shift
+      if node.label == label
+        return node, to_path(prev, node)
+      end
+      node.edges.each do |key,neighbour|
+        unless prev[neighbour]
+          prev[neighbour] = [node, key]
+          queue.push(neighbour)
+        end
+      end
+    end
+    return nil, nil
+  end
+
+  def process(phrase)
+    puts "xxxx x" # 最大４文字消しておわるに合わせる
+
+    node = LAYERS[0][0][-1] # おわる
+    phrase.each_char do |c|
+      suffix = ""
+      if DAKUON_TO_SEION[c]
+        suffix = "w"
+        c = DAKUON_TO_SEION[c]
+      elsif HANDAKUON_TO_SEION[c]
+        suffix = "ww"
+        c = HANDAKUON_TO_SEION[c]
+      end
+
+      node, path = find_node_path(node, c)
+      unless node
+        code = "U+%04X" % c.ord
+        STDERR.puts "そんな文字ないです。(#{c.inspect} #{code})"
+        exit 1
+      end
+      puts [*path, 'e', suffix].join(' ')
+    end
+    puts "space z" # おわる
+  end
+end
+
+def zenkaku(ascii)
+  ascii.tr(
+    " !\"\#$%&'()*+,\\-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+    "　！″＃＄％＆′（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ［￥］＾＿‘ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝〜"
+  )
+end
+
+def print_usage
+  STDERR.puts "Usage: asuka-name [--memo or --name] PHRASE"
+  STDERR.puts "\t--memo 「メモ」画面専用、最適化モード"
+  STDERR.puts "\t--name 「名前」画面専用、最適化モード"
+end
+
+def main
+  memo = !!ARGV.delete("--memo")
+  name = !!ARGV.delete("--name")
+  if ARGV.size != 1 || memo && name
+    print_usage
+    exit 1
+  end
+
+  if memo
+    mode = :memo
+  elsif name
+    mode = :name
+  else
+    mode = :compatible
+  end
+  prog = AsukaName.new(mode)
+  prog.process(zenkaku(ARGV[0])[0,4])
+end
+
+main
+
+# prog = AsukaName.new
+# p prog.process("おとぎり")
