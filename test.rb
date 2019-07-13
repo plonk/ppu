@@ -176,8 +176,6 @@ COMMANDS = {
   "unk"        => [[:aa2ch, :unk]],
   "unko"        => [[:aa2ch, :unk]],
 
-  "anka" => [[:anka]],
-
   "clock" => [[:system, "echo"], [:system, "sixel-clock"]],
 
   "mukuri"        => [[:aa2ch, :mukuri]],
@@ -539,8 +537,6 @@ def process_commands(cmds)
         check3(arg)
       when :check8
         check8
-      when :anka
-        anka(param)
       when :system
         system(arg)
       end
@@ -552,56 +548,15 @@ def id
   if $id
     $id
   else
-    if anka_mode?
-      STDERR.puts "アンカモードなので操作できません。"
+    $id = `xdotool search "アスカ" 2>/dev/null`
+    if $id.empty?
+      puts "アスカのウィンドウがみつかりません。"
       exit 1
-    else
-      $id = `xdotool search "アスカ" 2>/dev/null`
-      if $id.empty?
-        puts "アスカのウィンドウがみつかりません。"
-        exit 1
-      end
-      $id = $id.to_i
-      system("xdotool windowactivate --sync #{id()}")
     end
+    $id = $id.to_i
+    system("xdotool windowactivate --sync #{id()}")
     $id
   end
-end
-
-ANKA_PATH = File.join(File.dirname(__FILE__), "anka.txt")
-
-def anka(param)
-  if param =~ /\d+/
-    n = $&.to_i
-  else
-    STDERR.puts "ankaへの引数に数字がないよ。"
-    return
-  end
-
-  if anka_mode?
-    STDERR.puts "おかしいな。もうアンカモードだよ？"
-    return
-  end
-
-  unless n > $res
-    STDERR.puts "過去のレス番(#{n})が指定されているよ。"
-    return
-  end
-
-  if n > 1000
-    STDERR.puts "レス番でかすぎぃ！"
-    return
-  end
-
-  if n > $res + 20
-    STDERR.puts "レス番遠すぎ。"
-    return
-  end
-
-  File.open(ANKA_PATH, "w") do |f|
-    f.puts n
-  end
-  system_message("アンカモードに移行します。\n>>#{n}番までゲーム操作コマンドは実行されません。")
 end
 
 def system_message(msg)
@@ -609,33 +564,7 @@ def system_message(msg)
   system("vtsay", msg)
 end
 
-def anka_mode?
-  File.exist?(ANKA_PATH)
-end
-
 def process(summary, body)
-  if anka_mode?
-    fail 'logic error' unless anka_mode?
-
-    if $res >= File.read(ANKA_PATH).to_i
-      File.unlink(ANKA_PATH)
-      if parse_word(body).any?
-        process(summary, body)
-      else
-        system("vtsay", body)
-        system_message("コマンドレスではなかったので再アンカ(>>#{$res+1})。")
-        File.open(ANKA_PATH, "w") do |f|
-          f.puts($res + 1)
-        end
-      end
-
-      unless anka_mode?
-        system_message("オアシスモードに戻ります。")
-      end
-      return
-    end
-  end
-
   cmds = parse_word(body)
   if cmds.any?
     process_commands(cmds.take(MAX_COMMANDS))
@@ -664,13 +593,6 @@ def main
   body = body.gsub(/<a.*?>>>(.*?)<\/a>/, "\\1番")
   body = body.gsub(/https?:\/\/[a-zA-Z0-9\/?=\-.]+/,"リンク")
 
-  if anka_mode?
-    puts "\e[33;49m[安価 >>#{File.read(ANKA_PATH).chomp}]\e[0m"
-  end
-
-  # open("|t2i", "w") do |f|
-  #   f.write(body1)
-  # end
   print body1
 
   process(summary, body)
