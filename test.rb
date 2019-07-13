@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/ruby --disable-gems
 MAX_COMMANDS = 30
 DELAY1 = 0.1 # キー押し下げ時間
 DELAY2 = 0.25
