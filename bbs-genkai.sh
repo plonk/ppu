@@ -8,10 +8,10 @@ do
 
     if [ ! -z $URL ]
     then
-        bbiff --no-render $URL
+        bbiff --no-render --delay-seconds=2 --long-polling $URL
     else
         echo "移動先のスレッドが見つかりません: $THREAD_SPEC"
     fi
-    echo "10秒スリープ"
-    sleep 10
+    echo "5秒スリープ"
+    sleep 5 
 done
