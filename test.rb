@@ -564,39 +564,49 @@ def system_message(msg)
   system("vtsay", msg)
 end
 
+def process_commands_capped(cmds)
+  process_commands(cmds.take(MAX_COMMANDS))
+
+  if cmds.size > MAX_COMMANDS
+    print "\e[1;31;49m"
+    print "(長コマンドの為以下省略)"
+    print "\e[0m"
+    puts
+  end
+end
+
 def process(summary, body)
   cmds = parse_word(body)
   if cmds.any?
-    process_commands(cmds.take(MAX_COMMANDS))
-
-    if cmds.size > MAX_COMMANDS
-      print "\e[1;31;49m"
-      print "(長コマンドの為以下省略)"
-      print "\e[0m"
-      puts
-    end
+    process_commands_capped(cmds)
   else
     system("vtsay", body)
   end
+  puts
+end
+
+def process_args(summary, body)
+  body1 = body.gsub(/<a.*?>(.*?)<\/a>/, "\\1")
+  print body1
+
+  $res = body.each_line.first.split(/:/,2)[0].to_i
+
+  # レス番、投稿時刻などが含まれる最初の行を削除。
+  body = body.each_line.drop(1).join
+  # アンカのリンクを削除。
+  body = body
+           .gsub(/<a.*?>>>(.*?)<\/a>/, "\\1番")
+           .gsub(/https?:\/\/[a-zA-Z0-9\/?=\-.]+/,"リンク")
+
+  process(summary, body)
+  puts
 end
 
 def main
   # サマリにはスレッド名が入っている。
   summary, body = ARGV
 
-  body1 = body.gsub(/<a.*?>(.*?)<\/a>/, "\\1")
-
-  $res = body.each_line.first.split(/:/,2)[0].to_i
-  # レス番、投稿時刻などが含まれる最初の行を削除。
-  body = body.each_line.drop(1).join
-  # アンカのリンクを削除。
-  body = body.gsub(/<a.*?>>>(.*?)<\/a>/, "\\1番")
-  body = body.gsub(/https?:\/\/[a-zA-Z0-9\/?=\-.]+/,"リンク")
-
-  print body1
-
-  process(summary, body)
-  puts
+  process_args(summary, body)
 end
 
 if __FILE__ == $0
