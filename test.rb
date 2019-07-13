@@ -34,6 +34,15 @@ COMMANDS = {
   "mb" => [[:check3, "b"]],
   "mn" => [[:check3, "n"]],
 
+  "ah" => [[:down, "x"], [:press, "KP_Left"], [:up, "x"]],
+  "aj" => [[:down, "x"], [:press, "KP_Down"], [:up, "x"]],
+  "ak" => [[:down, "x"], [:press, "KP_Up"], [:up, "x"]],
+  "al" => [[:down, "x"], [:press, "KP_Right"], [:up, "x"]],
+  "ay" => [[:down, "x"], [:press, "KP_Home"], [:up, "x"]],
+  "au" => [[:down, "x"], [:press, "KP_Prior"], [:up, "x"]],
+  "ab" => [[:down, "x"], [:press, "KP_End"], [:up, "x"]],
+  "an" => [[:down, "x"], [:press, "KP_Next"], [:up, "x"]],
+
   "h" => [[:press, "KP_Left"]],
   "j" => [[:press, "KP_Down"]],
   "k" => [[:press, "KP_Up"]],
@@ -69,6 +78,15 @@ COMMANDS = {
   "m9" => [[:check3, "u"]],
   "m1" => [[:check3, "b"]],
   "m3" => [[:check3, "n"]],
+
+  "a4" => [[:down, "x"], [:press, "KP_Left"], [:up, "x"]],
+  "a2" => [[:down, "x"], [:press, "KP_Down"], [:up, "x"]],
+  "a8" => [[:down, "x"], [:press, "KP_Up"], [:up, "x"]],
+  "a6" => [[:down, "x"], [:press, "KP_Right"], [:up, "x"]],
+  "a7" => [[:down, "x"], [:press, "KP_Home"], [:up, "x"]],
+  "a9" => [[:down, "x"], [:press, "KP_Prior"], [:up, "x"]],
+  "a1" => [[:down, "x"], [:press, "KP_End"], [:up, "x"]],
+  "a3" => [[:down, "x"], [:press, "KP_Next"], [:up, "x"]],
 
   "4" => [[:press, "KP_Left"]],
   "2" => [[:press, "KP_Down"]],
