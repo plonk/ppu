@@ -128,7 +128,7 @@ COMMANDS = {
   "marinedrive" => [[:aa2ch, :marindrive]],
   "hizagakusai"       => [[:aa2ch, :hizagakusai]],
   "satakegawarui"       => [[:aa2ch, :satakegawarui]],
-  "futon"       => [[:aa, :futon]],
+  "futon"       => [[:aa2ch, :futon]],
   "atcoder"     => [[:aa, :atcoder]],
   "udon"        => [[:aa, :udon]],
   "onigiri"     => [[:aa2ch, :onigiri]],
@@ -177,6 +177,13 @@ COMMANDS = {
   "unko"        => [[:aa2ch, :unk]],
 
   "anka" => [[:anka]],
+
+  "clock" => [[:system, "echo"], [:system, "sixel-clock"]],
+
+  "mukuri"        => [[:aa2ch, :mukuri]],
+
+  "minako"        => [[:aa2ch, :minako]],
+  "daikon"        => [[:aa2ch, :daikon]],
 }
 
 AA = {
@@ -334,6 +341,38 @@ AA = {
     ["　 └───`"],
   ],
 
+  :mukuri => [
+    [".  　　　∧∧"],
+    ["  　　（*･ω･）"],
+    ["  　 ＿|　⊃／(＿＿_"],
+    ["  ／　└-(＿＿＿_／"],
+    ["  ￣￣￣￣￣￣￣"],
+  ],
+
+  :daikon => [
+    ['　　　　　ﾍ　∧'],
+    ['　　＿ノ;:;:`l/:;:;l__'],
+    ['　∠::Yl:;:;l:;:;∠::;:;:ヽ､'],
+    ['　　_ノ:`:´X:;::`;ヽ￣'],
+    ['　∠､:;;:/"ゝｰ､::;::;＼'],
+    ['　　　ﾉ　　＾ω＾ l￣　　　　'],
+    ['　　 │Ｖ　　　　＞'],
+    ['　　　＼　　　　/'],
+    ['　　　　　∨∨'],
+  ],
+
+  :minako => [
+    ["　　　　　　 　 　 ＿__"],
+    [".　　　 　 　 ,. :':´: : : : ｀:.､"],
+    ["　　　 　 ,.:'´: : : : : : : : : :.｀:..､"],
+    ["　　　　 {_,:;: : : : 0: : 0: : : : _;:.}"],
+    ["　　　　 {‐､｀　ー--一 ' ´,..- }"],
+    ["　　　　　ヽ､｀ ー--一 '\",.　'´"],
+    [".　　　　　　／;:'ー‐一';:＼"],
+    ["　　　　　 /:.:人: : : : :.人:.:.',"],
+    ["　　 　 　 ゝ'／:.ゝ‐t.':.＼-'"],
+    [". 　 　 　 　 ゝ--'　 ゝ--'"],
+  ],
 }
 
 VTSAY_OPTIONS = {
@@ -415,13 +454,13 @@ def check3(dir)
     return
   end
   cmds = [dir, DIRS[(i-1)%8], DIRS[(i+1)%8]].flat_map { |d|
-    ["a", d, "e"]
+    ["a#{d}", "z"]
   }
   process_commands(cmds)
 end
 
 def check8
-  cmds = DIRS.flat_map { |d| ["a",d,"e"] }
+  cmds = DIRS.flat_map { |d| ["a#{d}", "z"] }
   process_commands(cmds)
 end
 
@@ -470,7 +509,13 @@ def process_commands(cmds)
         system("xwd -id #{id()} > /tmp/sukusho.xwd && convert -quality 50 /tmp/sukusho.xwd /home/plonk/Dropbox/PPU/#{fn}")
         system("rm /tmp/sukusho.xwd")
         link = `dropbox sharelink /home/plonk/Dropbox/PPU/#{fn}`
-        system("shit", "post", "nichan://genkai.pcgw.pgw.jp/shuuraku/PeerCast*:postable,oldest",
+
+        puts
+        system("img2sixel", "/home/plonk/Dropbox/PPU/#{fn}")
+
+        system("shit", "post",
+               # "nichan://genkai.pcgw.pgw.jp/shuuraku/PeerCast*:postable,oldest",
+               "shitaraba:///game/48538/PeerCast*:postable,oldest",
                "--name", "test.rb",
                "--body", ">>#{$res}\nスクショ撮ったよ。\n#{link}",
                "--verbose")
@@ -496,6 +541,8 @@ def process_commands(cmds)
         check8
       when :anka
         anka(param)
+      when :system
+        system(arg)
       end
     end
   end
@@ -506,7 +553,7 @@ def id
     $id
   else
     if anka_mode?
-      STDERR.puts "できねーよm9(^Д^)"
+      STDERR.puts "アンカモードなので操作できません。"
       exit 1
     else
       $id = `xdotool search "アスカ" 2>/dev/null`
@@ -517,6 +564,7 @@ def id
       $id = $id.to_i
       system("xdotool windowactivate --sync #{id()}")
     end
+    $id
   end
 end
 
@@ -553,7 +601,7 @@ def anka(param)
   File.open(ANKA_PATH, "w") do |f|
     f.puts n
   end
-  system_message("アンカモードに移行します。\n>>#{n}番までのゲーム操作コマンドは実行されません。")
+  system_message("アンカモードに移行します。\n>>#{n}番までゲーム操作コマンドは実行されません。")
 end
 
 def system_message(msg)
