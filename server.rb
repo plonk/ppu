@@ -109,11 +109,11 @@ def print_policy_balance
   ndemocracy = total - nanarchy
 
   if total == 0
-    bar = "*" * 10
+    bar = "\e[91m" + "*" * 30 + "\e[0m"
   else
-    left = "*" * (nanarchy.fdiv(total) * 10).round
-    right = "+" * (ndemocracy.fdiv(total) * 10).round
-    bar = "#{left}#{right}"
+    left = "*" * (nanarchy.fdiv(total) * 30).round
+    right = "+" * (ndemocracy.fdiv(total) * 30).round
+    bar = "\e[91m#{left}\e[0m\e[94m#{right}\e[0m"
   end
 
   case $current_policy
@@ -144,6 +144,7 @@ def update_policy
       if nanarchy.to_f / total > 1.0/2
         $current_policy = :anarchy
         $vote_ends_at = nil
+        $choices = []
         system_message("anarchy が始まる。")
       end
     end
@@ -151,7 +152,7 @@ def update_policy
 end
 
 def print_vote_end(t)
-  puts "投票終了時刻： #{t.inspect}"
+  puts "次の採決時刻： #{t.inspect}"
 end
 
 def vote_on_action(message)
@@ -201,8 +202,8 @@ def vtsay(body)
 end
 
 def print_message(message)
-  puts "-----------------------------------------------------------"
   message = message.gsub(/<a.*?>(.*?)<\/a>/, "\\1")
+  message = message.sub(/\A\d+/) { |s| "\e[95m#{s}\e[0m" }
   print message
 end
 
@@ -235,13 +236,18 @@ def process_request(sock)
     puts
   when :eval
     begin
-      p eval(data[:string])
+      print "> "
+      puts data[:string]
+      r = eval(data[:string])
+      print "=> "
+      p r
     rescue => e
       p e
     end
   else
     STDERR.puts "unknown message type #{data[:type].inspect}"
   end
+  puts "\e[92m———————————————————————————————————————————————————————————\e[0m"
 end
 
 def policy_message?(message)
@@ -275,7 +281,10 @@ end
 def decide_action
   choice = $choices.sort_by.with_index { |c,i| [c.count,-i] }[-1]
   if choice.nil? # 誰も投票してない。
+    system_message("投票時間延長。")
     return
+  else
+    system_message("採決です。")
   end
 
   if $dry_run
@@ -283,10 +292,12 @@ def decide_action
   else
     process_commands_capped(choice.prefix)
   end
+  puts
   $choices.clear
   choice.votes.each do |id, cmds|
     cmds = cmds[choice.prefix.size .. -1]
     if cmds.any?
+      puts "#{id} → #{to_string(cmds)}"
       add_choice(id, cmds)
     end
   end
@@ -302,6 +313,7 @@ def timeout_callback
       end
       $vote_ends_at = Time.now + 30
       print_vote_end($vote_ends_at)
+      puts "\e[92m———————————————————————————————————————————————————————————\e[0m"
     end
   when :anarchy
   end

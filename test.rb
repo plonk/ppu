@@ -420,7 +420,7 @@ def name(param)
   body = `asuka-name #{param}`
   if $? == 0
     cmds = parse_word(body)
-    process_commands(cmds)
+    process_commands(cmds, FG_BRIGHT_BLUE)
   end
 end
 
@@ -430,7 +430,7 @@ def namae(param)
   body = `asuka-name --name #{param}`
   if $? == 0
     cmds = parse_word(body)
-    process_commands(cmds)
+    process_commands(cmds, FG_BRIGHT_BLUE)
   end
 end
 
@@ -440,7 +440,7 @@ def memo(param)
   body = `asuka-name --memo #{param}`
   if $? == 0
     cmds = parse_word(body)
-    process_commands(cmds)
+    process_commands(cmds, FG_BRIGHT_BLUE)
   end
 end
 
@@ -454,19 +454,24 @@ def check3(dir)
   cmds = [dir, DIRS[(i-1)%8], DIRS[(i+1)%8]].flat_map { |d|
     ["a#{d}", "z"]
   }
-  process_commands(cmds)
+  process_commands(cmds, FG_BRIGHT_BLUE)
 end
 
 def check8
   cmds = DIRS.flat_map { |d| ["a#{d}", "z"] }
-  process_commands(cmds)
+  process_commands(cmds, FG_BRIGHT_BLUE)
 end
 
-def process_commands(cmds)
+FG_CYAN = 36
+FG_BRIGHT_CYAN = 96
+FG_BLUE = 34
+FG_BRIGHT_BLUE = 94
+
+def process_commands(cmds, color = FG_BRIGHT_CYAN)
   cmds.each do |cmd, param|
     seq = to_seq(cmd)
 
-    print "\e[1;36;49m"
+    print "\e[#{color};49m"
     print "#{cmd} "
     print "\e[0m"
 
